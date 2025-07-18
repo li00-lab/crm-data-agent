@@ -36,12 +36,22 @@ logger = logging.getLogger(__name__)
 
 class FirestoreSessionService(BaseSessionService):
     def __init__(self,
-                 database: str,
-                 sessions_collection: str = "/",
-                 project_id: Optional[str] = None):
+             database: str,
+             sessions_collection: str = "/",
+             project_id: Optional[str] = None):
+    
+        # Support Firestore Emulator if running locally
+        emulator_host = os.environ.get("FIRESTORE_EMULATOR_HOST")
+        if emulator_host:
+            os.environ["GOOGLE_CLOUD_PROJECT"] = os.environ.get("GOOGLE_CLOUD_PROJECT", "fake-project")
+            os.environ["FIRESTORE_EMULATOR_HOST"] = emulator_host
+            logger.info(f"Using Firestore Emulator at {emulator_host}")
+        else:
+            logger.info("Using Google Firestore in production mode")
 
         self.client = Client(project_id, database=database)
         self.sessions_collection = sessions_collection
+
 
     @staticmethod
     def _clean_app_name(name: str) -> str:
